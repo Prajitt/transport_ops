@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TransitOps</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { outfit: ['Outfit', 'sans-serif'] },
+          colors: {
+            ink: '#17202a',
+            signal: '#0f9f8f',
+            amberline: '#f59e0b',
+            steel: '#39546f',
+            cloud: '#f4f7fb'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Outfit, sans-serif; color: #17202a; background: #f4f7fb; }
+    .auth-grid { min-height: 100vh; background: radial-gradient(circle at 20% 20%, rgba(15, 159, 143, .18), transparent 28%), #eef4f8; }
+    .glass { background: rgba(255, 255, 255, .78); backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, .8); }
+    .pulse-line { stroke-dasharray: 18 18; animation: route 8s linear infinite; }
+    .truck-motion { animation: truck 5s ease-in-out infinite; }
+    @keyframes route { to { stroke-dashoffset: -220; } }
+    @keyframes truck { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(28px); } }
+    .view-shell { display: grid; grid-template-columns: 260px 1fr; }
+    @media (max-width: 960px) { .view-shell { grid-template-columns: 1fr; } .side-panel { position: static; height: auto; } }
+    input, select, textarea { outline: none; }
+    .field { width: 100%; border: 1px solid #d8e1ea; border-radius: 8px; padding: .7rem .8rem; background: white; }
+    .field:focus { border-color: #0f9f8f; box-shadow: 0 0 0 3px rgba(15, 159, 143, .15); }
+    .btn { border-radius: 8px; padding: .68rem .9rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: .5rem; transition: .18s ease; }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { color: white; background: #0f9f8f; }
+    .btn-primary:hover { background: #0b8276; }
+    .btn-dark { color: white; background: #17202a; }
+    .btn-soft { color: #17202a; background: #e8eef4; }
+    .btn-soft:hover { background: #dce5ee; }
+    .btn-warn { color: white; background: #f59e0b; }
+    .card { background: white; border: 1px solid #dfe7ef; border-radius: 8px; box-shadow: 0 12px 36px rgba(23, 32, 42, .06); }
+    .table-wrap { overflow-x: auto; }
+    th { color: #607086; font-size: .74rem; letter-spacing: 0; text-transform: uppercase; text-align: left; white-space: nowrap; }
+    td, th { padding: .72rem .8rem; border-bottom: 1px solid #edf1f5; }
+    .badge { border-radius: 999px; padding: .22rem .55rem; font-size: .76rem; font-weight: 700; white-space: nowrap; }
+    .hidden-panel { display: none !important; }
+  </style>
+</head>
+<body>
+  <main id="auth-screen" class="auth-grid grid lg:grid-cols-[minmax(320px,520px)_1fr]">
+    <section class="flex items-center justify-center p-5 sm:p-8">
+      <div class="glass w-full max-w-md rounded-lg p-6 sm:p-8 shadow-2xl shadow-slate-300/40">
+        <div class="mb-7 flex items-center gap-3">
+          <div class="grid h-11 w-11 place-items-center rounded-lg bg-ink text-white"><i class="fa-solid fa-route"></i></div>
+          <div>
+            <h1 class="text-3xl font-extrabold tracking-normal">TransitOps</h1>
+            <p class="text-sm font-medium text-slate-500">Operations command center</p>
+          </div>
+        </div>
+
+        <div class="mb-5 grid grid-cols-2 gap-2 rounded-lg bg-slate-100 p-1">
+          <button id="show-login" class="btn btn-dark py-2" type="button"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+          <button id="show-signup" class="btn btn-soft py-2" type="button"><i class="fa-solid fa-user-plus"></i> Sign up</button>
+        </div>
+
+        <form id="login-form" class="space-y-3">
+          <input class="field" name="email" type="email" value="manager@transitops.com" placeholder="Email" required>
+          <input class="field" name="password" type="password" value="admin123" placeholder="Password" required>
+          <button class="btn btn-primary w-full" type="submit"><i class="fa-solid fa-lock-open"></i> Enter</button>
+        </form>
+
+        <form id="signup-form" class="hidden-panel space-y-3">
+          <input class="field" name="name" placeholder="Full name" required>
+          <input class="field" name="email" type="email" placeholder="Email" required>
+          <input class="field" name="password" type="password" placeholder="Password" required>
+          <select class="field" name="role" id="signup-role">
+            <option>Fleet Manager</option>
+            <option>Driver</option>
+            <option>Safety Officer</option>
+            <option>Financial Analyst</option>
+          </select>
+          <div id="metadata-fields" class="grid gap-3"></div>
+          <button class="btn btn-primary w-full" type="submit"><i class="fa-solid fa-id-card"></i> Create account</button>
+        </form>
+
+        <div class="mt-5 grid grid-cols-2 gap-2" id="auth-demo-buttons"></div>
+        <p id="auth-message" class="mt-4 min-h-6 text-sm font-semibold text-rose-600"></p>
+      </div>
+    </section>
+
+    <section class="relative hidden overflow-hidden bg-ink lg:flex lg:items-center lg:justify-center">
+      <svg class="absolute inset-0 h-full w-full" viewBox="0 0 900 700" aria-hidden="true">
+        <defs>
+          <linearGradient id="sky" x1="0" x2="1">
+            <stop offset="0" stop-color="#0f9f8f"/>
+            <stop offset="1" stop-color="#f59e0b"/>
+          </linearGradient>
+        </defs>
+        <path d="M-40 486 C150 390 260 528 430 430 S690 280 940 370" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="46" stroke-linecap="round"/>
+        <path class="pulse-line" d="M-40 486 C150 390 260 528 430 430 S690 280 940 370" fill="none" stroke="url(#sky)" stroke-width="8" stroke-linecap="round"/>
+        <g class="truck-motion" transform="translate(330 336)">
+          <rect x="0" y="52" width="180" height="70" rx="8" fill="#ffffff"/>
+          <rect x="124" y="24" width="74" height="98" rx="8" fill="#0f9f8f"/>
+          <rect x="139" y="39" width="38" height="30" rx="4" fill="#c8f7ef"/>
+          <rect x="18" y="68" width="78" height="12" rx="6" fill="#f59e0b"/>
+          <circle cx="45" cy="128" r="20" fill="#101827"/>
+          <circle cx="160" cy="128" r="20" fill="#101827"/>
+          <circle cx="45" cy="128" r="8" fill="#dfe7ef"/>
+          <circle cx="160" cy="128" r="8" fill="#dfe7ef"/>
+        </g>
+        <g fill="rgba(255,255,255,.12)">
+          <rect x="90" y="120" width="90" height="250" rx="8"/>
+          <rect x="700" y="90" width="72" height="220" rx="8"/>
+          <rect x="590" y="160" width="52" height="150" rx="8"/>
+        </g>
+      </svg>
+      <div class="relative max-w-xl px-10 text-white">
+        <p class="mb-3 text-sm font-bold uppercase tracking-normal text-amber-300">Live fleet control</p>
+        <h2 class="text-6xl font-extrabold leading-none tracking-normal">Dispatch, safety, and finance in one cockpit.</h2>
+        <p class="mt-5 text-lg text-slate-200">Persistent operational data, role-aware workflows, and validation where dispatch decisions happen.</p>
+      </div>
+    </section>
+  </main>
+
+  <main id="app-screen" class="hidden-panel min-h-screen">
+    <nav class="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <div class="flex items-center gap-3">
+          <div class="grid h-10 w-10 place-items-center rounded-lg bg-ink text-white"><i class="fa-solid fa-route"></i></div>
+          <div>
+            <h1 class="text-xl font-extrabold">TransitOps</h1>
+            <p id="profile-line" class="text-xs font-semibold text-slate-500"></p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <div id="nav-demo-buttons" class="flex flex-wrap gap-2"></div>
+          <button id="logout-btn" class="btn btn-soft" type="button" title="Sign out"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="view-shell mx-auto max-w-7xl gap-4 px-4 py-4">
+      <aside class="side-panel top-20 h-fit rounded-lg border border-slate-200 bg-white p-3 lg:sticky">
+        <div id="metric-panel" class="grid gap-2"></div>
+      </aside>
+      <section>
+        <div id="toast" class="mb-4 hidden rounded-lg border px-4 py-3 text-sm font-bold"></div>
+        <div id="role-view" class="grid gap-4"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
