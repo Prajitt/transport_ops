@@ -1,34 +1,8 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
-
-const performanceData = [
-  { month: 'Jan', onTime: 91, utilization: 78, trips: 412 },
-  { month: 'Feb', onTime: 89, utilization: 75, trips: 388 },
-  { month: 'Mar', onTime: 93, utilization: 82, trips: 451 },
-  { month: 'Apr', onTime: 92, utilization: 80, trips: 438 },
-  { month: 'May', onTime: 95, utilization: 86, trips: 498 },
-  { month: 'Jun', onTime: 94, utilization: 84, trips: 476 },
-];
-
-const maxTrips = Math.max(...performanceData.map(d => d.trips));
-
-const topVehicles = [
-  { id: '#4022', trips: 134, efficiency: 'Excellent', score: 96 },
-  { id: '#4015', trips: 118, efficiency: 'Good', score: 88 },
-  { id: '#4018', trips: 112, efficiency: 'Good', score: 85 },
-  { id: '#108', trips: 98, efficiency: 'Good', score: 83 },
-  { id: '#105', trips: 87, efficiency: 'Fair', score: 76 },
-];
-
-const topDrivers = [
-  { name: 'Marcus Reed', id: 'DRV-003', trips: 445, onTime: '98%', score: 98 },
-  { name: 'Sam Wilson', id: 'DRV-001', trips: 312, onTime: '96%', score: 95 },
-  { name: 'Maria Garcia', id: 'DRV-006', trips: 387, onTime: '97%', score: 94 },
-  { name: 'Elena Cruz', id: 'DRV-002', trips: 278, onTime: '94%', score: 91 },
-  { name: 'David Kim', id: 'DRV-007', trips: 203, onTime: '95%', score: 90 },
-];
 
 const scoreColor = (score) => {
   if (score >= 90) return { color: '#15803d', bg: '#dcfce7' };
@@ -37,6 +11,77 @@ const scoreColor = (score) => {
 };
 
 export default function AnalyticsPage() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState('6m');
+
+  async function fetchAnalytics() {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/analytics?period=${period}`);
+      const json = await res.json();
+      setData(json);
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [period]);
+
+  const handleExportFullReport = () => {
+    if (!data) return;
+    // Export full analytics dataset as structured JSON file
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+      reportMetadata: {
+        title: "TransitOps System Analytics Report",
+        periodSelected: period,
+        exportedAt: new Date().toISOString(),
+        manager: "Alex Rivera",
+      },
+      ...data
+    }, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `transitops_full_report_${period}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.removeChild(downloadAnchor);
+  };
+
+  if (loading) {
+    return (
+      <div style={{ backgroundColor: 'var(--color-background)', minHeight: '100vh', display: 'flex' }}>
+        <Sidebar activePath="/analytics" />
+        <main className="ml-60 flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <span className="material-symbols-outlined animate-spin" style={{ fontSize: '48px', color: 'var(--color-primary)' }}>
+              progress_activity
+            </span>
+            <p style={{ fontSize: '14px', color: 'var(--color-outline)', fontWeight: '600' }}>Loading Fleet Analytics...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const summary = data?.summary || {};
+  const monthly = data?.monthly || [];
+  const topVehicles = data?.topVehicles || [];
+  const topDrivers = data?.topDrivers || [];
+  const routePerformance = data?.routePerformance || [];
+  const fleetStatus = data?.fleetStatus || { inTransit: 27, available: 12, maintenance: 3 };
+
+  const totalStatusCount = (fleetStatus.inTransit || 0) + (fleetStatus.available || 0) + (fleetStatus.maintenance || 0) || 1;
+  const inTransitPct = ((fleetStatus.inTransit || 0) / totalStatusCount) * 100;
+  const availablePct = ((fleetStatus.available || 0) / totalStatusCount) * 100;
+  const maintenancePct = ((fleetStatus.maintenance || 0) / totalStatusCount) * 100;
+
+  const maxTrips = Math.max(...monthly.map(d => d.trips)) || 1;
+
   return (
     <div style={{ backgroundColor: 'var(--color-background)', minHeight: '100vh' }}>
       <Sidebar activePath="/analytics" />
@@ -56,6 +101,8 @@ export default function AnalyticsPage() {
             </div>
             <div className="flex gap-3">
               <select
+                value={period}
+                onChange={(e) => setPeriod(e.target.value)}
                 style={{
                   padding: '8px 16px',
                   border: '1px solid var(--color-outline-variant)',
@@ -68,24 +115,17 @@ export default function AnalyticsPage() {
                   outline: 'none',
                 }}
               >
-                <option>Last 6 Months</option>
-                <option>Last 30 Days</option>
-                <option>This Year</option>
+                <option value="6m">Last 6 Months</option>
+                <option value="30d">Last 30 Days</option>
+                <option value="1y">This Year</option>
               </select>
               <button
-                className="flex items-center gap-2 px-4 py-2"
-                style={{
-                  backgroundColor: 'var(--color-primary)',
-                  color: 'var(--color-on-primary)',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
+                onClick={handleExportFullReport}
+                className="flex items-center gap-2 px-4 py-2 border-none rounded-lg cursor-pointer text-white text-xs font-semibold bg-primary"
+                style={{ backgroundColor: 'var(--color-primary)' }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>download</span>
-                Export PDF
+                Export Full Report
               </button>
             </div>
           </div>
@@ -93,10 +133,10 @@ export default function AnalyticsPage() {
           {/* KPI Summary Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'Avg On-Time Rate', value: '94%', icon: 'schedule', color: '#15803d', bg: '#dcfce7', trend: '↑ +2% vs H1' },
-              { label: 'Fleet Utilization', value: '84%', icon: 'speed', color: 'var(--color-secondary)', bg: 'var(--color-secondary-fixed)', trend: '↑ +6% vs last year' },
-              { label: 'Total Trips (H1)', value: '2,663', icon: 'route', color: 'var(--color-primary)', bg: 'var(--color-primary-fixed)', trend: 'Jan – Jun 2025' },
-              { label: 'Avg Fuel Cost/Trip', value: '$79.25', icon: 'local_gas_station', color: '#b45309', bg: '#fef3c7', trend: '↓ -1.4% vs H1' },
+              { label: 'Avg On-Time Rate', value: `${summary.avgOnTimeRate || 94}%`, icon: 'schedule', color: '#15803d', bg: '#dcfce7', trend: '↑ +2% vs H1' },
+              { label: 'Fleet Utilization', value: `${summary.avgUtilization || 84}%`, icon: 'speed', color: 'var(--color-secondary)', bg: 'var(--color-secondary-fixed)', trend: '↑ +6% vs last year' },
+              { label: 'Total Trips', value: summary.totalTripsH1?.toLocaleString() || '2,663', icon: 'route', color: 'var(--color-primary)', bg: 'var(--color-primary-fixed)', trend: 'Selected Period' },
+              { label: 'Avg Fuel Cost/Trip', value: `$${summary.avgFuelCostPerTrip || '79.25'}`, icon: 'local_gas_station', color: '#b45309', bg: '#fef3c7', trend: '↓ -1.4% vs H1' },
             ].map((s) => (
               <div
                 key={s.label}
@@ -146,7 +186,7 @@ export default function AnalyticsPage() {
                 </div>
               </div>
               <div style={{ height: '180px', display: 'flex', alignItems: 'flex-end', gap: '16px', padding: '0 8px' }}>
-                {performanceData.map((d) => (
+                {monthly.map((d) => (
                   <div key={d.month} className="flex-1 flex flex-col items-center" style={{ cursor: 'pointer' }}>
                     <div style={{ width: '100%', display: 'flex', gap: '4px', alignItems: 'flex-end', height: '150px' }}>
                       <div
@@ -163,7 +203,7 @@ export default function AnalyticsPage() {
                       <div
                         style={{
                           flex: 1,
-                          height: `${d.onTime}%`,
+                          height: `${d.onTimeRate || d.onTime}%`,
                           backgroundColor: 'var(--color-secondary)',
                           borderRadius: '4px 4px 0 0',
                           opacity: 0.7,
@@ -198,23 +238,23 @@ export default function AnalyticsPage() {
                 <svg viewBox="0 0 100 100" style={{ width: '140px', height: '140px', transform: 'rotate(-90deg)' }}>
                   <circle cx="50" cy="50" r="38" fill="none" stroke="#eeedf4" strokeWidth="14" />
                   <circle cx="50" cy="50" r="38" fill="none" stroke="var(--color-secondary)" strokeWidth="14"
-                    strokeDasharray={`${0.64 * 2 * Math.PI * 38} ${2 * Math.PI * 38}`}
+                    strokeDasharray={`${(inTransitPct / 100) * 2 * Math.PI * 38} ${2 * Math.PI * 38}`}
                     strokeLinecap="butt" />
                   <circle cx="50" cy="50" r="38" fill="none" stroke="var(--color-primary)" strokeWidth="14"
-                    strokeDasharray={`${0.286 * 2 * Math.PI * 38} ${2 * Math.PI * 38}`}
-                    strokeDashoffset={`${-(0.64) * 2 * Math.PI * 38}`}
+                    strokeDasharray={`${(availablePct / 100) * 2 * Math.PI * 38} ${2 * Math.PI * 38}`}
+                    strokeDashoffset={`${-((inTransitPct / 100)) * 2 * Math.PI * 38}`}
                     strokeLinecap="butt" />
                   <circle cx="50" cy="50" r="38" fill="none" stroke="#b45309" strokeWidth="14"
-                    strokeDasharray={`${0.071 * 2 * Math.PI * 38} ${2 * Math.PI * 38}`}
-                    strokeDashoffset={`${-(0.64 + 0.286) * 2 * Math.PI * 38}`}
+                    strokeDasharray={`${(maintenancePct / 100) * 2 * Math.PI * 38} ${2 * Math.PI * 38}`}
+                    strokeDashoffset={`${-((inTransitPct + availablePct) / 100) * 2 * Math.PI * 38}`}
                     strokeLinecap="butt" />
                 </svg>
               </div>
               <div className="space-y-3">
                 {[
-                  { label: 'In-Transit / Active', pct: '64%', count: '27 vehicles', color: 'var(--color-secondary)' },
-                  { label: 'Available', pct: '28.6%', count: '12 vehicles', color: 'var(--color-primary)' },
-                  { label: 'In Maintenance', pct: '7.1%', count: '3 vehicles', color: '#b45309' },
+                  { label: 'In-Transit / Active', pct: `${inTransitPct.toFixed(1)}%`, count: `${fleetStatus.inTransit} vehicles`, color: 'var(--color-secondary)' },
+                  { label: 'Available', pct: `${availablePct.toFixed(1)}%`, count: `${fleetStatus.available} vehicles`, color: 'var(--color-primary)' },
+                  { label: 'In Maintenance', pct: `${maintenancePct.toFixed(1)}%`, count: `${fleetStatus.maintenance} vehicles`, color: '#b45309' },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center gap-3">
                     <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: item.color, flexShrink: 0, display: 'inline-block' }} />
@@ -253,7 +293,7 @@ export default function AnalyticsPage() {
                       key={v.id}
                       className="flex items-center justify-between px-4 py-3"
                       style={{ borderTop: i > 0 ? '1px solid rgba(197,197,211,0.3)' : 'none', transition: 'background-color 0.15s', cursor: 'pointer' }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(220,225,255,0.1)'}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(220, 225, 255, 0.1)'}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
                       <div className="flex items-center gap-3">
@@ -302,7 +342,7 @@ export default function AnalyticsPage() {
                       key={d.id}
                       className="flex items-center justify-between px-4 py-3"
                       style={{ borderTop: i > 0 ? '1px solid rgba(197,197,211,0.3)' : 'none', transition: 'background-color 0.15s', cursor: 'pointer' }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(220,225,255,0.1)'}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(220, 225, 255, 0.1)'}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
                       <div className="flex items-center gap-3">
@@ -311,7 +351,7 @@ export default function AnalyticsPage() {
                         </span>
                         <div>
                           <p style={{ fontSize: '14px', fontWeight: '600', color: 'var(--color-on-surface)' }}>{d.name}</p>
-                          <p style={{ fontSize: '12px', color: 'var(--color-on-surface-variant)' }}>{d.trips} trips · {d.onTime} on-time</p>
+                          <p style={{ fontSize: '12px', color: 'var(--color-on-surface-variant)' }}>{d.trips} trips · {d.onTimeRate || d.onTime}% on-time</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
