@@ -98,32 +98,48 @@ export default function Sidebar({ activePath }) {
       <div className="px-3 pt-4 mt-auto space-y-1"
         style={{ borderTop: '1px solid rgba(197, 197, 211, 0.3)' }}
       >
-        {bottomItems.map((item) => (
-          <a
-            key={item.href}
-            href={item.href}
-            className="flex items-center gap-3 px-3 py-2 transition-colors duration-200"
-            style={{
-              color: 'var(--color-on-surface-variant)',
-              fontSize: '14px',
-              lineHeight: '20px',
-              borderRadius: '4px',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--color-secondary)';
-              e.currentTarget.style.backgroundColor = 'var(--color-surface-container-high)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--color-on-surface-variant)';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-              {item.icon}
-            </span>
-            <span>{item.label}</span>
-          </a>
-        ))}
+        {bottomItems.map((item) => {
+          const isActive = activePath === item.href;
+          return (
+            <a
+              key={item.href}
+              href={item.href}
+              className="flex items-center gap-3 px-3 py-2 transition-colors duration-200"
+              style={{
+                color: isActive ? 'var(--color-secondary)' : 'var(--color-on-surface-variant)',
+                fontWeight: isActive ? '700' : '400',
+                borderLeft: isActive ? '4px solid var(--color-secondary)' : '4px solid transparent',
+                backgroundColor: isActive ? 'rgba(134, 242, 228, 0.1)' : 'transparent',
+                borderRadius: isActive ? '0 4px 4px 0' : '4px',
+                fontSize: '14px',
+                lineHeight: '20px',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.color = 'var(--color-secondary)';
+                  e.currentTarget.style.backgroundColor = 'var(--color-surface-container-high)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.color = 'var(--color-on-surface-variant)';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }
+              }}
+            >
+              <span
+                className="material-symbols-outlined"
+                style={{
+                  fontSize: '20px',
+                  fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0",
+                }}
+              >
+                {item.icon}
+              </span>
+              <span>{item.label}</span>
+            </a>
+          );
+        })}
       </div>
     </aside>
   );
