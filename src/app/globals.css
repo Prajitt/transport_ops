@@ -1,26 +1,199 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* TransitOps Design System Colors */
+  --color-background: #faf8ff;
+  --color-surface: #faf8ff;
+  --color-surface-dim: #dad9e1;
+  --color-surface-bright: #faf8ff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f4f3fa;
+  --color-surface-container: #eeedf4;
+  --color-surface-container-high: #e9e7ef;
+  --color-surface-container-highest: #e3e1e9;
+  --color-on-surface: #1a1b21;
+  --color-on-surface-variant: #444651;
+  --color-inverse-surface: #2f3036;
+  --color-inverse-on-surface: #f1f0f7;
+  --color-outline: #757682;
+  --color-outline-variant: #c5c5d3;
+  --color-surface-tint: #4059aa;
+  --color-primary: #00236f;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #1e3a8a;
+  --color-on-primary-container: #90a8ff;
+  --color-inverse-primary: #b6c4ff;
+  --color-primary-fixed: #dce1ff;
+  --color-primary-fixed-dim: #b6c4ff;
+  --color-on-primary-fixed: #00164e;
+  --color-on-primary-fixed-variant: #264191;
+  --color-secondary: #006a61;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #86f2e4;
+  --color-on-secondary-container: #006f66;
+  --color-secondary-fixed: #89f5e7;
+  --color-secondary-fixed-dim: #6bd8cb;
+  --color-on-secondary-fixed: #00201d;
+  --color-on-secondary-fixed-variant: #005049;
+  --color-tertiary: #4b1c00;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #6e2c00;
+  --color-on-tertiary-container: #f39461;
+  --color-tertiary-fixed: #ffdbcb;
+  --color-tertiary-fixed-dim: #ffb691;
+  --color-on-tertiary-fixed: #341100;
+  --color-on-tertiary-fixed-variant: #773205;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  /* Status Colors */
+  --color-success: #15803d;
+  --color-success-container: #dcfce7;
+  --color-warning: #b45309;
+  --color-warning-container: #fef3c7;
+
+  /* Typography */
+  --font-family-inter: 'Inter', sans-serif;
+  --font-family-mono: 'JetBrains Mono', monospace;
+
+  /* Border Radius */
+  --radius-sm: 0.125rem;
+  --radius: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+
+  /* Spacing */
+  --spacing-base: 4px;
+  --spacing-container-padding: 24px;
+  --spacing-gutter: 16px;
+  --spacing-stack-sm: 8px;
+  --spacing-stack-md: 16px;
+  --spacing-stack-lg: 32px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Base Styles */
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Material Symbols */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #c5c5d3;
+  border-radius: 10px;
+}
+
+/* Sidebar active state */
+.nav-active {
+  color: var(--color-secondary);
+  font-weight: 700;
+  border-left: 4px solid var(--color-secondary);
+  background-color: rgba(134, 242, 228, 0.1);
+}
+
+/* Chart bar transition */
+.chart-bar {
+  transition: height 0.5s ease-out;
+}
+
+/* Status Badges */
+.badge-available {
+  background-color: rgba(21, 128, 61, 0.1);
+  color: #15803d;
+}
+.badge-in-transit {
+  background-color: rgba(0, 106, 97, 0.1);
+  color: var(--color-secondary);
+}
+.badge-maintenance {
+  background-color: rgba(180, 83, 9, 0.1);
+  color: #b45309;
+}
+.badge-dispatched {
+  background-color: rgba(0, 35, 111, 0.1);
+  color: var(--color-primary);
+}
+.badge-completed {
+  background-color: rgba(21, 128, 61, 0.1);
+  color: #15803d;
+}
+.badge-error {
+  background-color: rgba(186, 26, 26, 0.1);
+  color: var(--color-error);
+}
+
+/* Card hover animation */
+.card-hover {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 35, 111, 0.08);
+}
+
+/* Table row zebra */
+.table-row-even {
+  background-color: rgba(244, 243, 250, 0.4);
+}
+
+/* Sticky column */
+.sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background-color: white;
+}
+
+/* Glass panel */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+}
+
+/* Progress bar */
+.progress-track {
+  background-color: var(--color-surface-container);
+  border-radius: var(--radius-full);
+  height: 4px;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background-color: var(--color-secondary);
+  transition: width 0.5s ease-out;
+}
+
+/* Tooltip */
+.tooltip {
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.has-tooltip:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
 }
